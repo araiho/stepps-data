@@ -20,12 +20,15 @@ elicit$datasetID[which(elicit$datasetID == 1394)] = 15274
 
 version = 'v3'
 
+list_name = 'must_have'
+# list_name = 'kujawa'
+
 #####################################################################################
 # metadata for calibration paper
 #####################################################################################
 
-meta = data.frame(site=character(0), id=character(0), long=numeric(0), lat=numeric(0), pi=character(0), 
-                  depth=numeric(0), neotoma=character(0), calibration=character(0), notes=character(0))
+meta = data.frame(Site=character(0), ID=character(0),  Lat=numeric(0), Long=numeric(0),PI=character(0), 
+                  Depth=numeric(0), Neotoma=character(0), Calibration=character(0), Notes=character(0))
 
 #####################################################################################
 # read in dictionary and pollen data
@@ -88,17 +91,25 @@ meta=meta
 # build the neo calibration datasets
 
 # function(data, ids, meta, taxa, type, depth_type, meta){
-neo_cal_min_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='min', meta)
-neo_cal_max_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='max', meta)
-neo_cal_mid_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='mid', meta)
-neo_cal_min = neo_cal_min_out$cal
-neo_cal_max = neo_cal_max_out$cal
+# neo_cal_min_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='min', meta)
+# neo_cal_max_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='max', meta)
+neo_cal_mid_out = get_cal_data(pollen_neo, neo_ids, elicit, type='neo', depth_type='mid', meta, list_name)
+# neo_cal_min = neo_cal_min_out$cal
+# neo_cal_max = neo_cal_max_out$cal
 neo_cal_mid = neo_cal_mid_out$cal
 
 # save the rdata
-save(neo_cal_min, file=paste0('data/cal_min_', version, '.rdata'))
-save(neo_cal_max, file=paste0('data/cal_max_', version, '.rdata'))
-save(neo_cal_mid, file=paste0('data/cal_mid_', version, '.rdata'))
+# save(neo_cal_min, file=paste0('data/cal_min_', version, '.rdata'))
+# save(neo_cal_max, file=paste0('data/cal_max_', version, '.rdata'))
+# save(neo_cal_mid, file=paste0('data/cal_mid_', version, '.rdata'))
+
+# function(data, ids, meta, taxa, type, depth_type, meta){
+# neo_cal_min_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='min', meta)
+# neo_cal_max_out = get_cal_data(pollen_neo, neo_ids, elicit, taxa, type='neo', depth_type='max', meta)
+neo_cal_mid_out = get_cal_data(pollen_neo, neo_ids, elicit, type='neo', depth_type='mid', meta, list_name)
+# neo_cal_min = neo_cal_min_out$cal
+# neo_cal_max = neo_cal_max_out$cal
+neo_cal_mid = neo_cal_mid_out$cal
 
 meta_neo = neo_cal_mid_out$meta
 
@@ -112,11 +123,20 @@ ids=clh_ids
 elicit=elicit
 type='clh'
 depth_type='mid'
+# 
+# # function(data, ids, meta, taxa, type, depth_type)
+# clh_cal_min_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='min', meta, list_name)
+# clh_cal_max_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='max', meta, list_name)
+# clh_cal_mid_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='mid', meta, list_name)
+# clh_cal_min = clh_cal_min_out$cal
+# clh_cal_max = clh_cal_max_out$cal
+# clh_cal_mid = clh_cal_mid_out$cal
+
 
 # function(data, ids, meta, taxa, type, depth_type)
-clh_cal_min_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='min', meta)
-clh_cal_max_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='max', meta)
-clh_cal_mid_out = get_cal_data(clh, clh_ids, elicit, taxa, type='clh', depth_type='mid', meta)
+clh_cal_min_out = get_cal_data(clh, clh_ids, elicit, type='clh', depth_type='min', meta, list_name)
+clh_cal_max_out = get_cal_data(clh, clh_ids, elicit, type='clh', depth_type='max', meta, list_name)
+clh_cal_mid_out = get_cal_data(clh, clh_ids, elicit, type='clh', depth_type='mid', meta, list_name)
 clh_cal_min = clh_cal_min_out$cal
 clh_cal_max = clh_cal_max_out$cal
 clh_cal_mid = clh_cal_mid_out$cal
@@ -133,67 +153,99 @@ clh.counts <- read.csv('data/hotchkiss_lynch_calcote_counts_v0.1.csv', stringsAs
 clh.sites$name <- gsub(" ","", clh.sites$name, fixed=TRUE)
 clh.counts$name <- gsub(" ","", clh.counts$name, fixed=TRUE)
 
-n <- nrow(clh.sites)
-
-ids    <- vector(mode="numeric", length=0)
-states <- vector(mode="numeric", length=0)
-lat    <- vector(mode="numeric", length=0)
-long   <- vector(mode="numeric", length=0)
-site   <- vector(mode="character", length=0)
-pi     <- vector(mode="character", length=0)
-pre.all    <- matrix(NA, nrow=0, ncol=length(taxa))
-
-site.count = 0
-
-for (i in 1:n){
+get_clhpre <- function(clh.sites, clh.counts, meta){
   
-  site.i <- as.character(clh.sites$name[i])
-  idx    <- which(clh.counts$name == site.i)
-  sample.type   <- clh.counts[idx,1]
-  counts = clh.counts[idx,]
+  n <- nrow(clh.sites)
   
-  if ((length(sample.type) <= 2) & (any(sample.type=='Pre'))){
+  ids    <- vector(mode="numeric", length=0)
+  states <- vector(mode="numeric", length=0)
+  lat    <- vector(mode="numeric", length=0)
+  long   <- vector(mode="numeric", length=0)
+  site   <- vector(mode="character", length=0)
+  pi     <- vector(mode="character", length=0)
+  pre.all    <- matrix(NA, nrow=0, ncol=length(taxa))
+  
+  site.count = 0
+  
+  for (i in 1:n){
     
-    pre.site = as.matrix(counts[which(sample.type=="Pre"),8:ncol(clh.counts)])
-    compressed2stepps = compile_list_neotoma(pre.site, 'Stepps')
-    compressed2model = compile_list_stepps(compressed2stepps, list.name='must_have', pollen.equiv.stepps, cf = TRUE, type = TRUE)
-    #       compressed2model  = compile_taxa_stepps(compressed2stepps, list.name='must_have', 
-    #                                               alt.table=pollen.equiv.stepps, cf = TRUE, type = TRUE)
-    #       compressed2model  = t(compressed2model[,!(colnames(compressed2model)=='Other')])
-    pre.all = rbind(pre.all, compressed2model)
-    site.count = site.count + 1
-    ids    = c(ids, paste('CALPRE', site.count, sep=''))
-    states = c(states, 'wisconsin')
-    site   = c(site, site.i)
-    lat    = c(lat, clh.sites$lat[i])
-    long   = c(long, clh.sites$long[i])
-    pi     = c(pi, clh.counts$analyst[idx[1]])
+    site.i <- as.character(clh.sites$name[i])
+    idx    <- which(clh.counts$name == site.i)
+    sample.type   <- clh.counts[idx,1]
+    counts = clh.counts[idx,]
     
-    meta.row = data.frame(site     = site.i, 
-                          id       = paste0('CALPRE', site.count), 
-                          long     = clh.sites$long[i], 
-                          lat      = clh.sites$lat[i], 
-                          pi       = clh.counts$analyst[idx[1]], 
-                          depth    = counts[sample.type=='Pre', 'depth_mid'],
-                          neotoma  = from_db, 
-                          calibration = 'Y',
-                          notes    = '')
-    meta  = rbind(meta, meta.row)
-  } else {
-    next
+    if ((length(sample.type) <= 2) & (any(sample.type=='Pre'))){
+      
+      pre.site = as.matrix(counts[which(sample.type=="Pre"),8:ncol(clh.counts)])
+      compressed2stepps = compile_list_neotoma(pre.site, 'Stepps')
+      compressed2model = compile_list_stepps(compressed2stepps, list.name=list_name, pollen.equiv.stepps, cf = TRUE, type = TRUE)
+      #       compressed2model  = compile_taxa_stepps(compressed2stepps, list.name='must_have', 
+      #                                               alt.table=pollen.equiv.stepps, cf = TRUE, type = TRUE)
+      #       compressed2model  = t(compressed2model[,!(colnames(compressed2model)=='Other')])
+      pre.all = rbind(pre.all, compressed2model)
+      site.count = site.count + 1
+      ids    = c(ids, paste('CALPRE', site.count, sep=''))
+      states = c(states, 'wisconsin')
+      site   = c(site, site.i)
+      lat    = c(lat, clh.sites$lat[i])
+      long   = c(long, clh.sites$long[i])
+      pi     = c(pi, clh.counts$analyst[idx[1]])
+      
+      meta.row = data.frame(Site     = site.i, 
+                            ID       = paste0('CLHPRE', site.count),
+                            Lat      = clh.sites$lat[i], 
+                            Long     = clh.sites$long[i], 
+                            PI       = clh.counts$analyst[idx[1]], 
+                            Depth    = counts[sample.type=='Pre', 'depth_mid'],
+                            Neotoma  = 'N', 
+                            Calibration = 'Y',
+                            Notes    = '')
+      meta  = rbind(meta, meta.row)
+    } else {
+      next
+    }
+    
   }
+  
+  clh_pre <- data.frame(id=ids, site=site, long=long, lat=lat, state=states, pi=pi, depth=rep(NA, length(ids)), pre.all, 
+                        stringsAsFactors=FALSE)
+  
+  return(list(clh_pre=clh_pre, meta_clhpre = meta))
   
 }
 
-clh_pre <- data.frame(id=ids, site=site, long=long, lat=lat, state=states, pi=pi, depth=rep(NA, length(ids)), pre.all, 
-                          stringsAsFactors=FALSE)
+clh_pre_out = get_clhpre(clh.sites, clh.counts, meta)
+clh_pre     = clh_pre_out$clh_pre
+meta_clhpre = clh_pre_out$meta_clhpre
 
+#########################################################################################################################################
+# build calibration data set from sites with only core-top and pre-settlement
+#########################################################################################################################################
 
-cal_min = rbind(neo_cal_min, clh_cal_min, clh_pre)
-cal_max = rbind(neo_cal_max, clh_cal_max, clh_pre)
+# cal_min = rbind(neo_cal_min, clh_cal_min, clh_pre)
+# cal_max = rbind(neo_cal_max, clh_cal_max, clh_pre)
 cal_mid = rbind(neo_cal_mid, clh_cal_mid, clh_pre)
 
 # save tha data files
-write.table(cal_min, file=paste('data/cal_data_upper_depth_', Sys.Date(), '.csv', sep=''), sep=',', row.names=FALSE)
-write.table(cal_max, file=paste('data/cal_data_lower_depth_', Sys.Date(), '.csv', sep=''), sep=',', row.names=FALSE)
-write.table(cal_mid, file=paste('data/cal_data_mid_depth_', Sys.Date(), '.csv', sep=''), sep=',', row.names=FALSE)
+suffix = version
+if (list_name == 'kujawa'){
+  suffix = paste0(list_name, '_', suffix)
+  colnames(cal_mid)[which(colnames(cal_mid) == 'CEDAR.JUNIPER')] = 'JUNIPER'
+  colnames(cal_mid)[which(colnames(cal_mid) == 'POPLAR.TULIP.POPLAR')] = 'POPLAR'
+  colnames(cal_mid) = tolower(colnames(cal_mid))
+}
+
+# write.table(cal_min, file=paste('data/cal_data_upper_depth_', Sys.Date(), '.csv', sep=''), sep=',', row.names=FALSE)
+# write.table(cal_max, file=paste('data/cal_data_lower_depth_', Sys.Date(), '.csv', sep=''), sep=',', row.names=FALSE)
+write.table(cal_mid, file=paste('data/cal_data_mid_depth_', suffix, '.csv', sep=''), sep=',', row.names=FALSE)
+
+meta      = rbind(meta_neo, meta_clh, meta_clhpre)
+col_names = paste0('{', colnames(meta), '}')
+
+# csv to latex package doesn't like NA
+meta[is.na(meta)] = ''
+# use { and } to indicate table entries
+meta = t(apply(meta, 1, function(x) paste0('{', x, '}')))
+colnames(meta) = col_names
+
+write.table(meta, file=paste('data/meta_', version, '.csv', sep=''), sep=',', row.names=FALSE, quote=FALSE)

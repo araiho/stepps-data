@@ -1,4 +1,6 @@
-get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
+# list_name can be must_have, kujawa, or all
+
+get_cal_data <- function(data, ids, elicit, type, depth_type, meta, list_name){
   
   cal = data.frame(matrix(NA, nrow=0, ncol=length(taxa)+7))
   # colnames(cal) = taxa
@@ -20,6 +22,7 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
   
   for (i in 1:length(ids)){  
     print(i)
+    no_core_top = FALSE
     
     if (type=='neo'){
       id      = as.numeric(ids[i])
@@ -30,65 +33,69 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
       # skip green lake
       if (id == 982){  
         print('Skipping Green Lake')
-        meta.row = data.frame(site     = site, 
-                              id       = id, 
-                              long     = long, 
-                              lat      = lat, 
-                              pi       = pi, 
-                              depth    = depth, 
-                              neotoma  = from_db, 
-                              calibration = 'N',
-                              notes    = 'C')
-        meta  = rbind(meta, meta.row)
-        next 
+        meta.row = data.frame(Site     = site, 
+                              ID       = id, 
+                              Lat      = lat, 
+                              Long     = long, 
+                              PI       = pi, 
+                              Depth    = depth, 
+                              Neotoma  = from_db, 
+                              Calibration = 'N',
+                              Notes    = 'C')
+        no_core_top = TRUE
+#         meta  = rbind(meta, meta.row)
+#         next 
       }
       
       # skip ryerse lake
       if (id == 2318){  
         print('Skipping Ryerse Lake')
-        meta.row = data.frame(site     = site, 
-                              id       = id, 
-                              long     = long, 
-                              lat      = lat, 
-                              pi       = pi, 
-                              depth    = depth, 
-                              neotoma  = from_db, 
-                              calibration = 'N',
-                              notes    = 'C')
-        meta  = rbind(meta, meta.row)
-        next 
+        meta.row = data.frame(Site     = site, 
+                              ID       = id, 
+                              Lat      = lat, 
+                              Long     = long,  
+                              PI       = pi, 
+                              Depth    = depth, 
+                              Neotoma  = from_db, 
+                              Calibration = 'N',
+                              Notes    = 'C')
+        no_core_top = TRUE
+#         meta  = rbind(meta, meta.row)
+#         next 
       }
       
       # skip lake mary
       if (id == 3473){ 
         print('Skipping Lake Mary')
-        meta.row = data.frame(site     = site, 
-                              id       = id, 
-                              long     = long, 
-                              lat      = lat, 
-                              pi       = pi, 
-                              depth    = depth, 
-                              neotoma  = from_db, 
-                              calibration = 'N',
-                              notes    = 'C')
-        meta  = rbind(meta, meta.row)
-        next 
+        meta.row = data.frame(Site     = site, 
+                              ID       = id, 
+                              Lat      = lat, 
+                              Long     = long, 
+                              PI       = pi, 
+                              Depth    = depth, 
+                              Neotoma  = from_db, 
+                              Calibration = 'N',
+                              Notes    = 'C')
+        no_core_top = TRUE
+#         meta  = rbind(meta, meta.row)
+#         next 
       } 
       
       # skip chippewa lake
       if (id == 369){ 
         print('Skipping Chippewa Bog')
-        meta.row = data.frame(site     = site, 
-                              id       = id, 
-                              long     = long, 
-                              lat      = lat, 
-                              pi       = pi, 
-                              depth    = depth, 
-                              neotoma  = from_db, 
-                              calibration = 'N',
-                              notes    = 'C')
-        meta  = rbind(meta, meta.row)
-        next 
+        meta.row = data.frame(Site     = site, 
+                              ID       = id, 
+                              Lat      = lat, 
+                              Long     = long, 
+                              PI       = pi, 
+                              Depth    = depth, 
+                              Neotoma  = from_db, 
+                              Calibration = 'N',
+                              Notes    = 'C')
+        no_core_top = TRUE
+#         meta  = rbind(meta, meta.row)
+#         next 
       } 
       
       idx.meta = which(elicit$datasetID == id)      
@@ -97,7 +104,7 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
       idx.data = which(ids.data == id)
       id.data = data[[idx.data]]$dataset$dataset.meta$dataset.id
       
-      site  = elicit[idx.meta, 'site']
+      site  = strsplit(elicit[idx.meta, 'site'], '\\(')[[1]][1]
       long  = elicit[idx.meta, 'long']
       lat   = elicit[idx.meta, 'lat']
       state = elicit[idx.meta, 'state']
@@ -110,7 +117,7 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
       }
       
       x = compile_list_neotoma(data[[idx.data]], 'Stepps')
-      x = compile_list_stepps(x, list.name='must_have', pollen.equiv.stepps, cf = TRUE, type = TRUE)
+      x = compile_list_stepps(x, list.name=list_name, pollen.equiv.stepps, cf = TRUE, type = TRUE)
       
       #       x = compile_taxa_stepps(data[[i]], list.name='WhitmoreSmall', alt.table=NULL, cf=TRUE, type=TRUE)
 #       x = compile_taxa_stepps(x, list.name='must_have', alt.table=pollen.equiv.stepps, cf = TRUE, type = TRUE)
@@ -151,7 +158,7 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
       counts   = x[,16:ncol(x)]
       
       x = compile_list_neotoma(counts, 'Stepps')
-      x = compile_list_stepps(x, list.name='must_have', pollen.equiv.stepps, cf = TRUE, type = TRUE)
+      x = compile_list_stepps(x, list.name=list_name, pollen.equiv.stepps, cf = TRUE, type = TRUE)
       
       no_age = any(is.na(clh_meta$age))
       
@@ -169,10 +176,10 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
   
     }
     
-    if (!all(taxa == colnames(pol))) {
-      print("Taxon mismatch in pollen records.")
-      print(paste("--------> site: ", id, sep=''))
-    }
+#     if (!all(taxa == colnames(pol))) {
+#       print("Taxon mismatch in pollen records.")
+#       print(paste("--------> site: ", id, sep=''))
+#     }
     
     # get the results from the exercise
     sh_depths = elicit[elicit$datasetID == id, 9:12]
@@ -198,34 +205,46 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
       print(i)
       skipped.id.3na   = c(skipped.id.3na, id)
       skipped.site.3na = c(skipped.site.3na, site)
-      meta.row = data.frame(site     = site, 
-                            id       = id, 
-                            long     = long, 
-                            lat      = lat, 
-                            pi       = pi, 
-                            depth    = depth, 
-                            neotoma  = from_db, 
-                            calibration = 'N',
-                            notes    = 'A')
+      Notes = 'A'
+      if (no_core_top){
+        Notes = 'A, C'
+      }
+      
+      meta.row = data.frame(Site     = site, 
+                            ID       = id, 
+                            Lat      = lat, 
+                            Long     = long, 
+                            PI       = pi, 
+                            Depth    = depth, 
+                            Neotoma  = from_db, 
+                            Calibration = 'N',
+                            Notes    = Notes)
       meta  = rbind(meta, meta.row)
       next
     } else if ((na_count==2) & (sum(abs(ages_diff_site)>300, na.rm=TRUE)==2)) {
       print(i)
       skipped.id.2na   = c(skipped.id.2na, id)
       skipped.site.2na = c(skipped.site.2na, site)
-      meta.row = data.frame(site     = site, 
-                            id       = id, 
-                            long     = long, 
-                            lat      = lat, 
-                            pi       = pi, 
-                            depth    = depth, 
-                            neotoma  = from_db, 
-                            calibration = 'N',
-                            notes = 'B')
+      Notes = 'B'
+      if (no_core_top){
+        Notes = 'B, C'
+      }
+      meta.row = data.frame(Site     = site, 
+                            ID       = id, 
+                            Lat      = lat, 
+                            Long     = long, 
+                            PI       = pi, 
+                            Depth    = depth, 
+                            Neotoma  = from_db, 
+                            Calibration = 'N',
+                            Notes = Notes)
       meta  = rbind(meta, meta.row)
       next
     } else if (id == 1548){ # kotirant
       pre_samp = 1
+    } else if (no_core_top){
+      meta  = rbind(meta, meta.row)
+      next
     } else {
       
       # sort depths
@@ -254,16 +273,21 @@ get_cal_data <- function(data, ids, elicit, taxa, type, depth_type, meta){
     depth = good_depths[pre_samp]
     
     print(i)
-    cal   = rbind(cal, data.frame(id, site, long, lat, state, pi, depth=depth, pol))
-    meta.row = data.frame(site     = site, 
-                          id       = id, 
-                          long     = long, 
-                          lat      = lat, 
-                          pi       = pi, 
-                          depth    = depth, 
-                          neotoma  = from_db, 
-                          calibration = 'Y',
-                          notes    = '')
+    if (!exists('cal')){
+      cal = data.frame(id, site, long, lat, state, pi, depth=depth, pol)
+    } else {
+      cal   = rbind(cal, data.frame(id, site, long, lat, state, pi, depth=depth, pol))  
+    }
+    
+    meta.row = data.frame(Site     = site, 
+                          ID       = id, 
+                          Lat      = lat, 
+                          Long     = long, 
+                          PI       = pi, 
+                          Depth    = depth, 
+                          Neotoma  = from_db, 
+                          Calibration = 'Y',
+                          Notes    = '')
     meta  = rbind(meta, meta.row)
     
   }
