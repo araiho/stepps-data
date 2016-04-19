@@ -13,8 +13,12 @@ compile_list_neotoma <- function (object, list.name, cf = TRUE, type = TRUE)
   if (type == FALSE) 
     list.name <- list.name[is.na(pollen.equiv$type)]
   use.list <- which(avail.lists %in% list.name)
+  
+  taxa  = sort(unique(pollen.equiv[!is.na(pollen.equiv[,use.list+2]),use.list+2]))
+  ntaxa = length(taxa)
+  
   if (inherits(object, c("download","download_list"))) {
-    object=object[[1]]
+    object=object
     
     #     colnames(object$counts)[which(substr(colnames(object$counts), 1,3) == 'Iso')] = 'Isoetes'
     
@@ -33,6 +37,33 @@ compile_list_neotoma <- function (object, list.name, cf = TRUE, type = TRUE)
     compressed.cols <- compressed.list[, 1]
     compressed.list <- t(compressed.list[, -1])
     colnames(compressed.list) <- compressed.cols
+    
+    # add back the taxa that have no counts
+    zero_taxa = taxa[!(taxa %in% colnames(compressed.list))]
+    add_back = matrix(0, nrow=nrow(compressed.list), ncol=length(zero_taxa))
+    colnames(add_back) = zero_taxa
+    
+    compressed.list = cbind(compressed.list, add_back)
+    compressed.list = compressed.list[, sort(colnames(compressed.list))]
+    
+    counts_full = data.frame(matrix(0, nrow=nrow(object$counts), ncol=ntaxa))
+    colnames(counts_full) = taxa
+    idx = match(colnames(compressed.list), colnames(counts_full))
+    
+    for (j in 1:length(idx)){
+      if (!is.na(idx[j])){  
+        counts_full[,idx[j]] = compressed.list[,j]
+      } 
+    }
+    
+    if (any(is.na(idx))){
+      if (sum(is.na(idx)) > 1){ 
+        counts_full$Other = rowSums(compressed.list[,is.na(idx)])
+      } else {
+        counts_full$Other = compressed.list[,is.na(idx)]
+      }
+    }
+    
     new.list <- object$taxon.list
     new.list$compressed <- NA
     new.list$compressed <- as.character(pollen.equiv[match(new.list$taxon.name, 
@@ -40,7 +71,7 @@ compile_list_neotoma <- function (object, list.name, cf = TRUE, type = TRUE)
     new.list$compressed[is.na(new.list$compressed) & new.list$taxon.name %in% 
                           colnames(object$counts)] <- "Other"
     output <- list(dataset = object$dataset, sample.meta = object$sample.meta, 
-                   taxon.list = new.list, counts = compressed.list, 
+                   taxon.list = new.list, counts = counts_full, 
                    lab.data = object$lab.data,
                    chronologies = object$chronologies)
   }
@@ -66,7 +97,6 @@ compile_list_neotoma <- function (object, list.name, cf = TRUE, type = TRUE)
   return(output)
 }
 
-
 compile_list_stepps <- function(object, list.name='must_have', pollen.equiv.stepps=pollen.equiv.stepps, cf = TRUE, type = TRUE){
   
   if (!inherits(object, c('matrix', 'data.frame', 'download', 'download_list', 'list'))) {
@@ -76,7 +106,7 @@ compile_list_stepps <- function(object, list.name='must_have', pollen.equiv.step
   
   #   data(pollen.equiv.stepps)
   
-  avail.lists <- c('all', 'must_have')
+  avail.lists <- c('all', 'must_have', 'kujawa')
   
   use.list <- which(avail.lists %in% list.name)
   
