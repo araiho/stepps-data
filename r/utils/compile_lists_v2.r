@@ -179,7 +179,7 @@ compile_list_stepps <- function(object, list.name='must_have', pollen.equiv.step
   
   #   data(pollen.equiv.stepps)
   
-  avail.lists <- c('all', 'must_have', 'kujawa')
+  avail.lists <- c('all', 'must_have', 'kujawa', 'babystepps')
   
   use.list <- which(avail.lists %in% list.name)
   
